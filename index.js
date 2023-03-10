@@ -19,12 +19,39 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
     const categoryCollection = client.db('smoothStyling').collection('categories');
+    const galleryCollection = client.db('smoothStyling').collection('gallery');
+    const reviewCollection = client.db('smoothStyling').collection('review');
     try {
         app.get('/categories', async (req, res) => {
             const query = {}
             const cursor = categoryCollection.find(query);
             const categories = await cursor.toArray();
             res.send(categories);
+        });
+        app.get('/gallery', async (req, res) => {
+            const query = {}
+            const cursor = galleryCollection.find(query);
+            const gallery = await cursor.toArray();
+            res.send(gallery);
+        });
+        // review
+        app.get("/review", async (req, res) => {
+            const query = {};
+            const cursor = await reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            const reverseArray = reviews.reverse();
+            res.send(reverseArray);
+        });
+        app.post("/review", async (req, res) => {
+            const items = req.body;
+            const result = await reviewCollection.insertOne(items);
+            res.send(result);
+        });
+        app.get("/review", async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) };
+            const cursor = await reviewCollection.find(query).toArray();;
+            res.send(cursor);
         });
     }
 
