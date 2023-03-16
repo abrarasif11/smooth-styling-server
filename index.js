@@ -21,7 +21,9 @@ async function run() {
     const categoryCollection = client.db('smoothStyling').collection('categories');
     const galleryCollection = client.db('smoothStyling').collection('gallery');
     const reviewCollection = client.db('smoothStyling').collection('review');
+    const serviceCollection = client.db('smoothStyling').collection('service');
     try {
+        // categories
         app.get('/categories', async (req, res) => {
             const query = {}
             const cursor = categoryCollection.find(query);
@@ -52,6 +54,13 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const cursor = await reviewCollection.find(query).toArray();;
             res.send(cursor);
+        });
+        // services //
+        app.get('/service', async (req, res) => {
+            const query = {}
+            const cursor = serviceCollection.find(query);
+            const service = await cursor.toArray();
+            res.send(service);
         });
     }
 
