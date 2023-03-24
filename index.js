@@ -22,6 +22,7 @@ async function run() {
     const galleryCollection = client.db('smoothStyling').collection('gallery');
     const reviewCollection = client.db('smoothStyling').collection('review');
     const serviceCollection = client.db('smoothStyling').collection('service');
+    const appointmentCollection = client.db('smoothStyling').collection('appointment');
     try {
         // categories
         app.get('/categories', async (req, res) => {
@@ -61,6 +62,19 @@ async function run() {
             const cursor = serviceCollection.find(query);
             const service = await cursor.toArray();
             res.send(service);
+        });
+        // appointment //
+        app.get("/appointment", async (req, res) => {
+            const query = {};
+            const cursor = await appointmentCollection.find(query);
+            const reviews = await cursor.toArray();
+            const reverseArray = reviews.reverse();
+            res.send(reverseArray);
+        });
+        app.post("/appointment", async (req, res) => {
+            const appointment = req.body;
+            const result = await appointmentCollection.insertOne(appointment);
+            res.send(result);
         });
     }
 
