@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -11,9 +13,25 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('Smooth Styling Server is Running')
 })
-// Mongo Collection //
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+// jwt token //
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized Access');
+    }
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
+// Mongo Collection //
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.vhdpi0m.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -23,6 +41,7 @@ async function run() {
     const reviewCollection = client.db('smoothStyling').collection('review');
     const serviceCollection = client.db('smoothStyling').collection('service');
     const appointmentCollection = client.db('smoothStyling').collection('appointment');
+    const usersCollection = client.db('smoothStyling').collection('users');
     try {
         // categories
         app.get('/categories', async (req, res) => {
@@ -82,6 +101,15 @@ async function run() {
             const reverseArray = reviews.reverse();
             res.send(reverseArray);
         });
+
+         app.get("/appointment",verifyJWT,async(req, res) => {
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            const query = { email: email };
+            const appointment = await appointmentCollection.find(query).toArray();
+            res.send(appointment);
+         }) 
+
         app.post("/appointment", async (req, res) => {
             const appointment = req.body;
             const query = {
@@ -97,6 +125,20 @@ async function run() {
             const result = await appointmentCollection.insertOne(appointment);
             res.send(result);
         });
+        // users //
+        app.post('/users', async(req, res) =>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+        // JWT //
+        app.get('/jwt', async(req, res) =>{
+            const email = req.query.email;
+            const query = { email : email };
+            const user = await usersCollection.findOne(query);
+            console.log(user);
+            res.send({accessToken: 'token'});
+        })
     }
 
     finally {
