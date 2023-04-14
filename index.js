@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const app = express();
@@ -41,7 +41,7 @@ async function run() {
     const reviewCollection = client.db('smoothStyling').collection('review');
     const serviceCollection = client.db('smoothStyling').collection('service');
     const appointmentCollection = client.db('smoothStyling').collection('appointment');
-    const usersCollection = client.db('smoothStyling').collection('users');
+    const userCollection = client.db('smoothStyling').collection('users');
     try {
         // categories
         app.get('/categories', async (req, res) => {
@@ -125,20 +125,46 @@ async function run() {
             const result = await appointmentCollection.insertOne(appointment);
             res.send(result);
         });
-        // users //
-        app.post('/users', async(req, res) =>{
+        // user list // 
+        app.get("/usersList", async (req, res) => {
+            const query = {};
+            const cursor = await userCollection.find(query);
+            const reviews = await cursor.toArray();
+            const reverseArray = reviews.reverse();
+            res.send(reverseArray);
+        });
+        app.post("/usersList", async (req, res) => {
             const user = req.body;
-            const result = await usersCollection.insertOne(user);
+            const result = await userCollection.insertOne(user);
             res.send(result);
         });
-        // JWT //
-        app.get('/jwt', async(req, res) =>{
-            const email = req.query.email;
-            const query = { email : email };
-            const user = await usersCollection.findOne(query);
-            console.log(user);
-            res.send({accessToken: 'token'});
-        })
+        app.put("/usersList/admin/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, option,);
+            console.log(result);
+            res.send(result);
+        });
+        app.get('/usersList/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
+        });
+        // admin delete //
+        app.delete("/usersList/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await userCollection.deleteOne(query);
+            console.log(result);
+            res.send(result);
+        });
     }
 
     finally {
