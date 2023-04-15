@@ -102,13 +102,13 @@ async function run() {
             res.send(reverseArray);
         });
 
-         app.get("/appointment",verifyJWT,async(req, res) => {
+        app.get("/appointment", verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
             const query = { email: email };
             const appointment = await appointmentCollection.find(query).toArray();
             res.send(appointment);
-         }) 
+        })
 
         app.post("/appointment", async (req, res) => {
             const appointment = req.body;
@@ -118,9 +118,9 @@ async function run() {
                 email: appointment.email
             }
             const alreadyBooked = await appointmentCollection.find(query).toArray();
-            if(alreadyBooked.length){
+            if (alreadyBooked.length) {
                 const message = `You already have a booking on ${appointment.appointmentDate}`
-                return res.send({acknowledged: false,message})
+                return res.send({ acknowledged: false, message })
             }
             const result = await appointmentCollection.insertOne(appointment);
             res.send(result);
